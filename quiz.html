@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="quiz-container">
+        <h1>Welcome to the Quiz Game</h1>
+        <p id="question"></p>
+        <input type="text" id="answer" placeholder="Your Answer">
+        <button id="submit-btn">Submit Answer</button>
+
+        <p id="feedback"></p>
+        <p id="score"></p>
+    </div>
+
+    <script>
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadQuestion();
+
+            document.getElementById('submit-btn').addEventListener('click', () => {
+                const answer = document.getElementById('answer').value;
+                checkAnswer(answer);
+            });
+        });
+
+        function loadQuestion() {
+            fetch(`/get_question/${currentQuestionIndex}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('feedback').innerText = 'Quiz Over! You scored ' + score;
+                        document.getElementById('question').innerText = '';
+                        document.getElementById('submit-btn').disabled = true;
+                    } else {
+                        document.getElementById('question').innerText = data.question;
+                    }
+                });
+        }
+
+        function checkAnswer(answer) {
+            fetch('/check_answer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ question_index: currentQuestionIndex, answer: answer })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.result) {
+                    score += 1;
+                    document.getElementById('feedback').innerText = 'Correct!';
+                } else {
+                    document.getElementById('feedback').innerText = 'Wrong!';
+                }
+
+                currentQuestionIndex += 1;
+                loadQuestion();
+                document.getElementById('answer').value = '';
+                document.getElementById('score').innerText = 'Score: ' + score;
+            });
+        }
+    </script>
+</body>
+</html>
